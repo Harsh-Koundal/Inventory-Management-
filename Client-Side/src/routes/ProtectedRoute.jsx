@@ -1,12 +1,12 @@
 import { useInventory } from "../hooks/useInventory";
-import Login from "../pages/Auth/Login";
+import { Navigate, Outlet } from "react-router-dom";
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute() {
   const { user } = useInventory();
 
   if (!user) {
-    return <Login />;
+    return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <Outlet />;
 }

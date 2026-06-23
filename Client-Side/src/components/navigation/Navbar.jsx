@@ -1,9 +1,17 @@
 import { Bell, Menu } from "lucide-react";
-import { PAGE_TITLES } from "../../constants/appConstants";
+import { useMemo } from "react";
+import { useLocation } from "react-router-dom";
+import { NAV_ITEMS, PAGE_TITLES } from "../../constants/appConstants";
 import { useInventory } from "../../hooks/useInventory";
 
 export default function Navbar() {
-  const { activeTab, initials, lowStockCount, pendingCount, toggleSidebar } = useInventory();
+  const { initials, lowStockCount, pendingCount, toggleSidebar } = useInventory();
+  const location = useLocation();
+
+  const activeTab = useMemo(() => {
+    const currentItem = NAV_ITEMS.find((item) => item.path === location.pathname);
+    return currentItem?.id || "dashboard";
+  }, [location.pathname]);
 
   return (
     <header className="flex flex-shrink-0 items-center justify-between border-b border-gray-100 bg-white px-4 py-3 shadow-sm sm:px-5">

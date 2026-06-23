@@ -25,11 +25,11 @@ export const PAGE_TITLES = {
 };
 
 export const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { id: "products", label: "Products", Icon: Package },
-  { id: "stock", label: "Stock", Icon: Layers },
-  { id: "orders", label: "Orders", Icon: ShoppingCart },
-  { id: "history", label: "Stock History", Icon: History },
+  { id: "dashboard", path: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+  { id: "products", path: "/products", label: "Products", Icon: Package },
+  { id: "stock", path: "/stock", label: "Stock", Icon: Layers },
+  { id: "orders", path: "/orders", label: "Orders", Icon: ShoppingCart },
+  { id: "history", path: "/history", label: "Stock History", Icon: History },
 ];
 
 export const DASHBOARD_STAT_CONFIG = [
