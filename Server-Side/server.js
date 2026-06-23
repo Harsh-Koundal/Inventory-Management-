@@ -7,6 +7,9 @@ import dotenv from "dotenv";
 import connectionDB from "./config/dbConnection.js";
 import { createDefaultAdmin } from "./controllers/createDefaultAdmin.js";
 import authRoutes from "./routes/authRoute.js";
+import orderRoutes from "./routes/orderRoute.js";
+import productRoutes from "./routes/productRoute.js";
+import stockRoutes from "./routes/stockRoute.js";
 
 
 dotenv.config();
@@ -38,6 +41,9 @@ app.get("/",(req,res)=>{
 
 // routes 
 app.use("/api/auth",authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/stock", stockRoutes);
 
 app.use((req,res)=>{
     res.status(404).json({

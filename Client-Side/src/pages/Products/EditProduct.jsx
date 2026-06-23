@@ -26,7 +26,7 @@ export default function EditProduct({ product, onClose, onUpdated }) {
     setFormError("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const errorMessage = validateProductForm({ form, products, editItem: product });
 
     if (errorMessage) {
@@ -34,7 +34,7 @@ export default function EditProduct({ product, onClose, onUpdated }) {
       return;
     }
 
-    const result = updateProduct(product.id, normalizeProductPayload(form));
+    const result = await updateProduct(product.id, normalizeProductPayload(form));
 
     if (!result.ok) {
       setFormError(result.message);

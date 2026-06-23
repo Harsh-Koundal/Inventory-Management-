@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import prisma from "../config/prisma.js";
-import { email } from "zod";
 
 export const createDefaultAdmin = async () => {
     try {

@@ -49,7 +49,7 @@ export default function CreateOrder({ open, onClose, onCreated }) {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const errorMessage = validateOrderForm({ orderItems, products });
 
     if (errorMessage) {
@@ -57,7 +57,7 @@ export default function CreateOrder({ open, onClose, onCreated }) {
       return;
     }
 
-    const result = createOrder({ items: orderItems.filter((row) => row.pid), note: orderNote });
+    const result = await createOrder({ items: orderItems.filter((row) => row.pid), note: orderNote });
 
     if (!result.ok) {
       setFormError(result.message);

@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import prisma from "../../config/prisma.js"
+import prisma from "../config/prisma.js"
 
 const cookieName = process.env.AUTH_COOKIE_NAME || "auth_token";
 const cookieMaxAgeMs = 1000 * 60 * 60 * 24 * 7; // 7 days

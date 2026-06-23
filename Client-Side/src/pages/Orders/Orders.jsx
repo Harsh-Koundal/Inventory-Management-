@@ -138,8 +138,8 @@ export default function Orders() {
         orderId={cancelId}
         open={Boolean(cancelId)}
         onClose={() => setCancelId(null)}
-        onConfirm={() => {
-          const result = cancelOrder(cancelId);
+        onConfirm={async () => {
+          const result = await cancelOrder(cancelId);
           showToast(result.message, result.ok ? "success" : "error");
           setCancelId(null);
         }}

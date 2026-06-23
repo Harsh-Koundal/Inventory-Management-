@@ -27,7 +27,7 @@ export default function CreateProduct({ open, onClose, onCreated }) {
     onClose();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const errorMessage = validateProductForm({ form, products, editItem: null });
 
     if (errorMessage) {
@@ -35,7 +35,7 @@ export default function CreateProduct({ open, onClose, onCreated }) {
       return;
     }
 
-    const result = createProduct(normalizeProductPayload(form));
+    const result = await createProduct(normalizeProductPayload(form));
 
     if (!result.ok) {
       setFormError(result.message);

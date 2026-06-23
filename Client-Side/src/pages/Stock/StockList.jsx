@@ -42,7 +42,7 @@ export default function StockList() {
     setError("");
   };
 
-  const handleAdjust = () => {
+  const handleAdjust = async () => {
     const parsedQuantity = parseInt(quantity, 10);
 
     if (!quantity || Number.isNaN(parsedQuantity) || parsedQuantity <= 0) {
@@ -55,7 +55,7 @@ export default function StockList() {
       return;
     }
 
-    const result = adjustStock({
+    const result = await adjustStock({
       productId: adjustment.product.id,
       mode: adjustment.mode,
       quantity: parsedQuantity,

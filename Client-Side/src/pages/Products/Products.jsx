@@ -194,8 +194,8 @@ export default function Products() {
           cancelLabel="Cancel"
           confirmClassName="bg-red-600 hover:bg-red-700"
           onClose={() => setDeleteId(null)}
-          onConfirm={() => {
-            const result = deleteProduct(deleteId);
+          onConfirm={async () => {
+            const result = await deleteProduct(deleteId);
             showToast(result.message, result.ok ? "success" : "error");
             setDeleteId(null);
           }}

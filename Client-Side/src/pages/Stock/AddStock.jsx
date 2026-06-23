@@ -19,7 +19,7 @@ export default function AddStock({ adjustment, onClose }) {
     onClose();
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const parsedQuantity = parseInt(quantity, 10);
 
     if (!quantity || Number.isNaN(parsedQuantity) || parsedQuantity <= 0) {
@@ -32,12 +32,17 @@ export default function AddStock({ adjustment, onClose }) {
       return;
     }
 
-    adjustStock({
+    const result = await adjustStock({
       productId: adjustment.product.id,
       mode: adjustment.mode,
       quantity: parsedQuantity,
       note,
     });
+
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
 
     handleClose();
   };
