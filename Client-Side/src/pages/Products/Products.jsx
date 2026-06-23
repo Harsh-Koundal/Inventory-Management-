@@ -146,7 +146,7 @@ export default function Products() {
                       <Badge type={status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                      <div className="flex items-center justify-end gap-1 opacity-100 transition-opacity sm:opacity-100 sm:group-hover:opacity-100">
                         <button
                           onClick={() => setEditingProduct(product)}
                           className="rounded-lg p-1.5 text-indigo-500 transition-colors hover:bg-indigo-100"

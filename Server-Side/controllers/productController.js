@@ -1,6 +1,6 @@
 import { z } from "zod";
 import prisma from "../config/prisma.js";
-import { mapProduct, normalizeProductMetadata, serializeProductMetadata } from "../utils/inventoryMappers.js";
+import { mapProduct } from "../utils/inventoryMappers.js";
 
 const productSchema = z.object({
   sku: z.string().trim().min(1),
@@ -22,7 +22,7 @@ export const listProducts = async (_req, res) => {
   return res.json(products.map(mapProduct));
 };
 
-export const createProduct = async (req, res) => {
+export const createProduct = async (req, res) => { 
   try {
     const payload = productSchema.parse(req.body);
 
@@ -32,7 +32,9 @@ export const createProduct = async (req, res) => {
           sku: payload.sku.trim().toUpperCase(),
           name: payload.name.trim(),
           price: payload.price,
-          description: serializeProductMetadata(payload),
+          category: payload.category,
+          minStock: payload.minStock,
+          description: payload.description || "",
         },
         include: { stock: true },
       });
@@ -84,30 +86,28 @@ export const updateProduct = async (req, res) => {
   try {
     const payload = productSchema.parse(req.body);
 
-    const existingProduct = await prisma.product.findUnique({
-      where: { id: req.params.id },
-      include: { stock: true },
-    });
-
-    if (!existingProduct || !existingProduct.isActive) {
-      return res.status(404).json({ message: "Product not found." });
-    }
-
-    const previousQuantity = existingProduct.stock?.quantity ?? 0;
-    const quantityDelta = payload.quantity - previousQuantity;
-    const existingMeta = normalizeProductMetadata(existingProduct.description);
-
     const updatedProduct = await prisma.$transaction(async (tx) => {
+      const existingProduct = await tx.product.findUnique({
+        where: { id: req.params.id },
+        include: { stock: true },
+      });
+
+      if (!existingProduct || !existingProduct.isActive) {
+        throw new Error("Product not found.");
+      }
+
+      const previousQuantity = existingProduct.stock?.quantity ?? 0;
+      const quantityDelta = payload.quantity - previousQuantity;
+
       const product = await tx.product.update({
         where: { id: req.params.id },
         data: {
           sku: payload.sku.trim().toUpperCase(),
           name: payload.name.trim(),
+          category: payload.category,
           price: payload.price,
-          description: serializeProductMetadata({
-            ...existingMeta,
-            ...payload,
-          }),
+          minStock: payload.minStock,
+          description: payload.description || "",
         },
         include: { stock: true },
       });
@@ -155,6 +155,10 @@ export const updateProduct = async (req, res) => {
 
     if (error.code === "P2002") {
       return res.status(409).json({ message: "SKU already exists. Each product must have a unique SKU." });
+    }
+
+    if (error.message === "Product not found.") {
+      return res.status(404).json({ message: error.message });
     }
 
     console.error("Update product error:", error);

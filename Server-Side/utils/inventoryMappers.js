@@ -35,15 +35,13 @@ export const serializeProductMetadata = ({ category, minStock, description = "" 
   });
 
 export const mapProduct = (product) => {
-  const meta = normalizeProductMetadata(product.description);
-
   return {
     id: product.id,
     sku: product.sku,
     name: product.name,
-    category: meta.category,
-    minStock: meta.minStock,
-    description: meta.description,
+    category: product.category,
+    minStock: product.minStock,
+    description: product.description || "",
     price: Number(product.price),
     quantity: product.stock?.quantity ?? 0,
     isActive: product.isActive,

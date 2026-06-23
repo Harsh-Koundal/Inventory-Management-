@@ -98,13 +98,17 @@ export const createOrder = async (req, res) => {
       });
 
       for (const item of lineItems) {
-        const previousQty = item.product.stock?.quantity ?? 0;
-        const newQty = previousQty - item.qty;
-
-        await tx.stock.update({
+        const stock = await tx.stock.update({
           where: { productId: item.product.id },
-          data: { quantity: newQty },
+          data: { quantity: { decrement: item.qty } },
         });
+
+        if (stock.quantity < 0) {
+          throw new Error(`Insufficient stock for "${item.product.name}".`);
+        }
+
+        const newQty = stock.quantity;
+        const previousQty = newQty + item.qty;
 
         await tx.stockHistory.create({
           data: {
@@ -176,13 +180,13 @@ export const cancelOrder = async (req, res) => {
       });
 
       for (const item of order.items) {
-        const previousQty = item.product.stock?.quantity ?? 0;
-        const newQty = previousQty + item.quantity;
-
-        await tx.stock.update({
+        const stock = await tx.stock.update({
           where: { productId: item.productId },
-          data: { quantity: newQty },
+          data: { quantity: { increment: item.quantity } },
         });
+
+        const newQty = stock.quantity;
+        const previousQty = newQty - item.quantity;
 
         await tx.stockHistory.create({
           data: {

@@ -47,7 +47,11 @@ model Product {
     sku         String   @unique
     description String?
 
+    category    String
+
     price       Decimal  @db.Decimal(10, 2)
+
+    minStock    Int    @default(5)
 
     isActive    Boolean  @default(true)
 

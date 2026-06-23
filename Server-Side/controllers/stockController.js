@@ -24,28 +24,28 @@ export const adjustStock = async (req, res) => {
   try {
     const payload = stockAdjustmentSchema.parse(req.body);
 
-    const product = await prisma.product.findUnique({
-      where: { id: payload.productId },
-      include: { stock: true },
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
+        where: { id: payload.productId },
+        include: { stock: true },
+      });
 
-    if (!product || !product.isActive) {
-      return res.status(404).json({ message: "Product not found." });
-    }
+      if (!product || !product.isActive) {
+        throw new Error("Product not found.");
+      }
 
-    const previousQty = product.stock?.quantity ?? 0;
-    const delta = payload.mode === "add" ? payload.quantity : -payload.quantity;
-    const newQty = previousQty + delta;
+      const previousQty = product.stock?.quantity ?? 0;
+      const delta = payload.mode === "add" ? payload.quantity : -payload.quantity;
+      const newQty = previousQty + delta;
 
-    if (newQty < 0) {
-      return res.status(400).json({ message: "Stock cannot go below zero." });
-    }
+      if (newQty < 0) {
+        throw new Error("Stock cannot go below zero.");
+      }
 
-    await prisma.$transaction(async (tx) => {
       if (product.stock) {
         await tx.stock.update({
           where: { productId: payload.productId },
-          data: { quantity: newQty },
+          data: { quantity: { increment: delta } },
         });
       } else {
         await tx.stock.create({
@@ -64,14 +64,24 @@ export const adjustStock = async (req, res) => {
           createdById: req.user.id,
         },
       });
+
+      return product.name;
     });
 
     return res.json({
-      message: `${product.name} stock ${payload.mode === "add" ? "increased" : "reduced"} successfully.`,
+      message: `${result} stock ${payload.mode === "add" ? "increased" : "reduced"} successfully.`,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: "Invalid stock adjustment input", issues: error.issues });
+    }
+
+    if (error.message === "Product not found.") {
+      return res.status(404).json({ message: error.message });
+    }
+
+    if (error.message === "Stock cannot go below zero.") {
+      return res.status(400).json({ message: error.message });
     }
 
     console.error("Adjust stock error:", error);
