@@ -20,11 +20,11 @@ import CreateOrder from "./CreateOrder";
 import OrderDetails from "./OrderDetails";
 
 export default function Orders() {
-  const { cancelOrder, orders, showToast } = useInventory();
+  const { updateOrderStatus, orders, showToast } = useInventory();
   const [statusFilter, setStatusFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [cancelId, setCancelId] = useState(null);
+  const [statusChange, setStatusChange] = useState(null); // { id, status }
 
   const filteredOrders = useMemo(() => {
     const query = search.toLowerCase();
@@ -40,6 +40,15 @@ export default function Orders() {
         return matchesStatus && matchesSearch;
       });
   }, [orders, search, statusFilter]);
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    if (newStatus === "cancelled" || newStatus === "delivered") {
+      setStatusChange({ id: orderId, status: newStatus });
+    } else {
+      const result = await updateOrderStatus(orderId, newStatus);
+      showToast(result.message, result.ok ? "success" : "error");
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -107,7 +116,29 @@ export default function Orders() {
                     {formatCurrency(order.total)}
                   </TableCell>
                   <TableCell>
-                    <Badge type={order.status} />
+                    {order.status === "delivered" || order.status === "cancelled" ? (
+                      <Badge type={order.status} />
+                    ) : (
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-transparent cursor-pointer transition-colors pr-8 appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:0.75em_0.75em] ${
+                          order.status === "pending"
+                            ? "bg-amber-100 text-amber-700"
+                            : order.status === "processing"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-100 text-gray-600"
+                        }`}
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        }}
+                      >
+                        <option value="pending" className="bg-white text-gray-900 font-sans">Pending</option>
+                        <option value="processing" className="bg-white text-gray-900 font-sans">Processing</option>
+                        <option value="delivered" className="bg-white text-gray-900 font-sans">Delivered</option>
+                        <option value="cancelled" className="bg-white text-gray-900 font-sans">Cancelled</option>
+                      </select>
+                    )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-xs text-gray-400">
                     {formatDate(order.createdAt)}
@@ -115,7 +146,7 @@ export default function Orders() {
                   <TableCell className="text-right">
                     {order.status === "pending" || order.status === "processing" ? (
                       <button
-                        onClick={() => setCancelId(order.id)}
+                        onClick={() => setStatusChange({ id: order.id, status: "cancelled" })}
                         className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                       >
                         Cancel
@@ -135,13 +166,14 @@ export default function Orders() {
         onCreated={(message) => showToast(message, "success")}
       />
       <OrderDetails
-        orderId={cancelId}
-        open={Boolean(cancelId)}
-        onClose={() => setCancelId(null)}
+        orderId={statusChange?.id}
+        status={statusChange?.status}
+        open={Boolean(statusChange)}
+        onClose={() => setStatusChange(null)}
         onConfirm={async () => {
-          const result = await cancelOrder(cancelId);
+          const result = await updateOrderStatus(statusChange.id, statusChange.status);
           showToast(result.message, result.ok ? "success" : "error");
-          setCancelId(null);
+          setStatusChange(null);
         }}
       />
     </div>

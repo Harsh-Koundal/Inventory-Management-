@@ -203,6 +203,20 @@ export function InventoryProvider({ children }) {
     }
   };
 
+  const updateOrderStatus = async (orderId, status) => {
+    try {
+      const response = await orderService.updateOrderStatus(orderId, status);
+      await loadInventoryData(false);
+      return { ok: true, message: response.message };
+    } catch (error) {
+      if (error.status === 401) {
+        handleUnauthorized();
+      }
+
+      return { ok: false, message: error.message || "Unable to update order status." };
+    }
+  };
+
   const lowStockCount = products.filter((product) => product.quantity <= product.minStock).length;
   const pendingCount = orders.filter((order) => order.status === "pending").length;
   const initials = getInitials(user?.name);
@@ -231,6 +245,7 @@ export function InventoryProvider({ children }) {
     adjustStock,
     createOrder,
     cancelOrder,
+    updateOrderStatus,
     refreshInventory: loadInventoryData,
   };
 

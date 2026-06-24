@@ -1,6 +1,6 @@
 import { z } from "zod";
 import prisma from "../config/prisma.js";
-import { mapOrder } from "../utils/inventoryMappers.js";
+import { mapOrder, statusMap } from "../utils/inventoryMappers.js";
 
 const createOrderSchema = z.object({
   items: z.array(
@@ -162,8 +162,8 @@ export const cancelOrder = async (req, res) => {
       return res.status(404).json({ message: "Order not found." });
     }
 
-    if (order.status !== "PENDING") {
-      return res.status(409).json({ message: "Only pending orders can be cancelled." });
+    if (order.status !== "PENDING" && order.status !== "PROCESSING") {
+      return res.status(409).json({ message: "Only pending or processing orders can be cancelled." });
     }
 
     const updatedOrder = await prisma.$transaction(async (tx) => {
@@ -212,5 +212,107 @@ export const cancelOrder = async (req, res) => {
   } catch (error) {
     console.error("Cancel order error:", error);
     return res.status(500).json({ message: "Unable to cancel order" });
+  }
+};
+
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const frontendToDbStatus = {
+      pending: "PENDING",
+      processing: "PROCESSING",
+      delivered: "COMPLETED",
+      cancelled: "CANCELLED",
+    };
+
+    const dbStatus = frontendToDbStatus[status] || status;
+
+    if (!["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"].includes(dbStatus)) {
+      return res.status(400).json({ message: `Invalid status: ${status}` });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                stock: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    if (order.status === dbStatus) {
+      return res.json({
+        message: `Order status is already "${status}".`,
+        order: mapOrder(order),
+      });
+    }
+
+    if (order.status === "CANCELLED" || order.status === "COMPLETED") {
+      return res.status(400).json({
+        message: `Cannot change status of a ${statusMap[order.status]} order.`,
+      });
+    }
+
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const orderUpdate = await tx.order.update({
+        where: { id },
+        data: { status: dbStatus },
+        include: {
+          items: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      });
+
+      if (dbStatus === "CANCELLED") {
+        for (const item of order.items) {
+          const stock = await tx.stock.update({
+            where: { productId: item.productId },
+            data: { quantity: { increment: item.quantity } },
+          });
+
+          const newQty = stock.quantity;
+          const previousQty = newQty - item.quantity;
+
+          await tx.stockHistory.create({
+            data: {
+              productId: item.productId,
+              type: "ORDER_CANCELLED",
+              quantity: item.quantity,
+              previousQty,
+              newQty,
+              referenceId: order.id,
+              notes: `Order ${order.orderNumber} cancelled`,
+              createdById: req.user.id,
+            },
+          });
+        }
+      }
+
+      return orderUpdate;
+    });
+
+    const displayStatus = statusMap[dbStatus] || dbStatus.toLowerCase();
+    return res.json({
+      message: `Order ${order.orderNumber} status updated to ${displayStatus}.`,
+      order: mapOrder(updatedOrder),
+    });
+  } catch (error) {
+    console.error("Update order status error:", error);
+    return res.status(500).json({ message: "Unable to update order status." });
   }
 };

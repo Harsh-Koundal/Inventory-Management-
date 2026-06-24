@@ -14,6 +14,7 @@ enum UserRole {
 
 enum OrderStatus {
     PENDING
+    PROCESSING
     COMPLETED
     CANCELLED
 }

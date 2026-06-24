@@ -1,8 +1,17 @@
 import { api } from "./api";
 
 export const productService = {
-  createProduct: (payload) => api.post("/products", payload),
+  createProduct: (payload) => {
+    console.log(payload);
+    return api.post("/products", payload);
+  },
+
   deleteProduct: (productId) => api.delete(`/products/${productId}`),
+
   getProducts: () => api.get("/products"),
-  updateProduct: (productId, payload) => api.put(`/products/${productId}`, payload),
+
+  updateProduct: (productId, payload) => {
+    console.log(payload);
+    return api.put(`/products/${productId}`, payload);
+  },
 };

@@ -50,8 +50,9 @@ export const mapProduct = (product) => {
   };
 };
 
-const statusMap = {
+export const statusMap = {
   PENDING: "pending",
+  PROCESSING: "processing",
   COMPLETED: "delivered",
   CANCELLED: "cancelled",
 };
